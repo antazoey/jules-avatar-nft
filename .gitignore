@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+.build/
+ape-nft-project/
+
+>>>>>>> 520b2ce (feat: from template)
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
