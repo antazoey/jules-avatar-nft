@@ -1,3 +1,14 @@
 name: jules-avatar-nft
+
+ethereum:
+  mainnet:
+    default_provider: alchemy
+  rinkeby:
+    default_provider: alchemy
+  goerli:
+    default_provider: alchemy
+  ropsten:
+    default_provider: alchemy
+
 plugins:
   - name: vyper

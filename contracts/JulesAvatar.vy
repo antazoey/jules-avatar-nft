@@ -76,7 +76,7 @@ baseURI: public(String[100])
 def __init__():
     # The owner (me) gets the 1 and only NFT
     self.owner = msg.sender
-    self.baseURI = "ipfs://QmbYVQXcibEoRrdGrF1zh9i1mkXVB3vtPzLA9BFYicKuGc"
+    self.baseURI = "ipfs://QmRC6SV8LjQxWTw4jQgjYubysDZh8y68NxXUujyJgEzbLm"
     self.idToOwner[0] = msg.sender
     self.balanceOf[msg.sender] = 1
 

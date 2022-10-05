@@ -18,4 +18,4 @@ def nft(owner, project):
 
 @pytest.fixture(scope="session")
 def base_uri():
-    return "ipfs://QmbYVQXcibEoRrdGrF1zh9i1mkXVB3vtPzLA9BFYicKuGc"
+    return "ipfs://QmRC6SV8LjQxWTw4jQgjYubysDZh8y68NxXUujyJgEzbLm"

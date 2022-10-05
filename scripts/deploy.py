@@ -11,7 +11,7 @@ def cli(cli_ctx, network):
     """Deploy the NFT contract."""
 
     network = cli_ctx.provider.network.name
-    if network == LOCAL_NETWORK_NAME or network.endwith("-fork"):
+    if network == LOCAL_NETWORK_NAME or network.endswith("-fork"):
         owner = cli_ctx.account_manager.test_accounts[0]
     else:
         owner = cli_ctx.account_manager.load("main")
