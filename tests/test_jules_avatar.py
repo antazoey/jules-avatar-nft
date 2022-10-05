@@ -1,3 +1,4 @@
+from email.mime import base
 import ape
 
 
@@ -12,6 +13,10 @@ def test_owner(nft, owner):
     assert nft.owner() == owner
 
 
+def test_base_uri(nft, base_uri):
+    assert nft.baseURI() == base_uri
+
+
 def test_balance_of(nft, owner):
     assert nft.balanceOf(owner) == 1
 
@@ -22,6 +27,11 @@ def test_owner_of(nft, owner):
 
 def test_total_supply(nft):
     assert nft.totalSupply() == 1
+
+
+def test_token_uri(nft, base_uri):
+    actual = nft.tokenURI(0)
+    assert actual == f"{base_uri}/0.json"
 
 
 def test_transfer_from(nft, owner, receiver):

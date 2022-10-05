@@ -14,3 +14,8 @@ def receiver(accounts):
 @pytest.fixture(scope="session")
 def nft(owner, project):
     return owner.deploy(project.JulesAvatar)
+
+
+@pytest.fixture(scope="session")
+def base_uri():
+    return "ipfs://QmbYVQXcibEoRrdGrF1zh9i1mkXVB3vtPzLA9BFYicKuGc"
