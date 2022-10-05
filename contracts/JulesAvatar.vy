@@ -1,4 +1,4 @@
-# @version 0.3.4
+# @version 0.3.6
 
 from vyper.interfaces import ERC165
 from vyper.interfaces import ERC721
@@ -6,7 +6,6 @@ from vyper.interfaces import ERC721
 implements: ERC165
 implements: ERC721
 
-############ ERC-165 #############
 # @dev Static list of supported ERC165 interface ids
 SUPPORTED_INTERFACES: constant(bytes4[3]) = [
     0x01ffc9a7,  # ERC165 interface ID of ERC165
@@ -14,9 +13,6 @@ SUPPORTED_INTERFACES: constant(bytes4[3]) = [
     0x5b5e139f,  # ERC165 interface ID of ERC721 Metadata Extension
 ]
 
-############ ERC-721 #############
-
-# Interface for the contract called by safeTransferFrom()
 interface ERC721Receiver:
     def onERC721Received(
             operator: address,
@@ -24,8 +20,6 @@ interface ERC721Receiver:
             tokenId: uint256,
             data: Bytes[1024]
         ) -> bytes4: view
-
-# Interface for ERC721Metadata
 
 interface ERC721Metadata:
 	def name() -> String[64]: view
@@ -109,11 +103,8 @@ baseURI: public(String[100])
 
 @external
 def __init__():
-    """
-    @dev Contract constructor.
-    """
     self.baseURI = "ipfs://QmfBhQ7jk64f852pwYsj5RKZp68ntX1LqGod98MZQxbwrv"
-# ERC721 Metadata Extension
+
 @pure
 @external
 def name() -> String[40]:
@@ -123,7 +114,6 @@ def name() -> String[40]:
 @external
 def symbol() -> String[5]:
     return SYMBOL
-
 
 @view
 @external
