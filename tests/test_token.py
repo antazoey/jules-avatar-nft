@@ -8,87 +8,59 @@ def test_erc165(nft):
     assert nft.supportsInterface("0x5b5e139f")
 
 
-def test_init(nft, owner):
-    assert nft.balanceOf(owner) == 0
-    with ape.reverts():
-        assert nft.ownerOf(0)
+def test_owner(nft, owner):
+    assert nft.owner() == owner
 
 
-def test_total_supply(nft, owner):
-    assert nft.totalSupply() == 0
-    nft.mint(owner, sender=owner)
+def test_balance_of(nft, owner):
+    assert nft.balanceOf(owner) == 1
+
+
+def test_owner_of(nft, owner):
+    assert nft.ownerOf(0) == owner
+
+
+def test_total_supply(nft):
     assert nft.totalSupply() == 1
 
 
-def test_transfer(nft, owner, receiver):
-    assert nft.balanceOf(owner) == 0
-    assert nft.balanceOf(receiver) == 0
-    nft.mint(owner, sender=owner)
-    assert nft.balanceOf(owner) == 1
-    assert nft.ownerOf(1) == owner.address
-    nft.transferFrom(owner, receiver, 1, sender=owner)
+def test_transfer_from(nft, owner, receiver):
+    nft.transferFrom(owner, receiver, 0, sender=owner)
     assert nft.balanceOf(owner) == 0
     assert nft.balanceOf(receiver) == 1
-    assert nft.ownerOf(1) == receiver.address
-    nft.transferFrom(receiver, owner, 1, sender=receiver)
+    assert nft.ownerOf(0) == receiver.address
+
+    # Undo
+    nft.transferFrom(receiver, owner, 0, sender=receiver)
     assert nft.balanceOf(receiver) == 0
     assert nft.balanceOf(owner) == 1
-    assert nft.ownerOf(1) == owner.address
+    assert nft.ownerOf(0) == owner.address
 
 
-def test_incorrect_signer_transfer(nft, owner, receiver):
-    assert nft.balanceOf(owner) == 0
-    assert nft.balanceOf(receiver) == 0
-    nft.mint(owner, sender=owner)
+def test_transfer_from_bad_id(nft, owner, receiver):
+    with ape.reverts():
+        nft.transferFrom(owner, receiver, 1, sender=owner)
+
+
+def test_transfer_from_not_owner(nft, owner, receiver):
     with ape.reverts():
         nft.transferFrom(owner, receiver, 1, sender=receiver)
 
-    assert nft.balanceOf(receiver) == 0
-    assert nft.balanceOf(owner) == 1
-    assert nft.ownerOf(1) == owner.address
 
-
-def test_incorrect_signer_minter(nft, owner, receiver):
-    assert nft.balanceOf(owner) == 0
-    assert nft.balanceOf(receiver) == 0
-
-    with ape.reverts():
-        nft.mint(owner, sender=receiver)
-
-    assert not nft.isMinter(receiver)
-    assert nft.balanceOf(owner) == 0
-    assert nft.balanceOf(receiver) == 0
-
-
-def test_approve_transfer(nft, owner, receiver):
-    assert nft.balanceOf(owner) == 0
-    assert nft.balanceOf(receiver) == 0
-    nft.mint(owner, sender=owner)
-    assert nft.balanceOf(receiver) == 0
-    assert nft.balanceOf(owner) == 1
-    assert nft.ownerOf(1) == owner.address
-
-    with ape.reverts():
-        nft.approve(receiver, 1, sender=receiver)
-        nft.transferFrom(owner, receiver, 1, sender=receiver)
-    assert nft.balanceOf(receiver) == 0
-    assert nft.balanceOf(owner) == 1
-    assert nft.ownerOf(1) == owner.address
-
-    nft.approve(receiver, 1, sender=owner)
-    assert nft.getApproved(1) == receiver
-    nft.transferFrom(owner, receiver, 1, sender=receiver)
+def test_approve(nft, owner, receiver):
+    nft.approve(receiver, 0, sender=owner)
+    assert nft.getApproved(0) == receiver
+    nft.transferFrom(owner, receiver, 0, sender=receiver)
     assert nft.balanceOf(receiver) == 1
     assert nft.balanceOf(owner) == 0
-    assert nft.ownerOf(1) == receiver.address
+    assert nft.ownerOf(0) == receiver
 
 
-def test_uri(nft, owner):
+def test_approve_not_owner(nft, receiver):
+    with ape.reverts():
+        nft.approve(receiver, 0, sender=receiver)
 
-    assert nft.baseURI() == "ipfs://QmfBhQ7jk64f852pwYsj5RKZp68ntX1LqGod98MZQxbwrv"
-    nft.mint(owner, sender=owner)
-    assert nft.tokenURI(1) == "ipfs://QmfBhQ7jk64f852pwYsj5RKZp68ntX1LqGod98MZQxbwrv/1"
 
-    nft.setBaseURI("new base uri", sender=owner)
-    assert nft.baseURI() == "new base uri"
-    assert nft.tokenURI(1) == "new base uri/1"
+def test_approve_bad_id(nft, owner, receiver):
+    with ape.reverts():
+        nft.approve(receiver, 1, sender=owner)

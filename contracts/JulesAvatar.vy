@@ -6,7 +6,6 @@ from vyper.interfaces import ERC721
 implements: ERC165
 implements: ERC721
 
-# @dev Static list of supported ERC165 interface ids
 SUPPORTED_INTERFACES: constant(bytes4[3]) = [
     0x01ffc9a7,  # ERC165 interface ID of ERC165
     0x80ac58cd,  # ERC165 interface ID of ERC721
@@ -31,7 +30,6 @@ interface ERC721Metadata:
 	) -> String[128]: view
 
 interface ERC721Enumerable:
-
 	def totalSupply() -> uint256: view
 
 	def tokenByIndex(
@@ -44,88 +42,73 @@ interface ERC721Enumerable:
 	) -> uint256: view
 
 
-# @dev Emits when ownership of any NFT changes by any mechanism. This event emits when NFTs are
-#      created (`from` == 0) and destroyed (`to` == 0). Exception: during contract creation, any
-#      number of NFTs may be created and assigned without emitting Transfer. At the time of any
-#      transfer, the approved address for that NFT (if any) is reset to none.
-# @param owner Sender of NFT (if address is zero address it indicates token creation).
-# @param receiver Receiver of NFT (if address is zero address it indicates token destruction).
-# @param tokenId The NFT that got transfered.
 event Transfer:
     sender: indexed(address)
     receiver: indexed(address)
     tokenId: indexed(uint256)
 
-# @dev This emits when the approved address for an NFT is changed or reaffirmed. The zero
-#      address indicates there is no approved address. When a Transfer event emits, this also
-#      indicates that the approved address for that NFT (if any) is reset to none.
-# @param owner Owner of NFT.
-# @param approved Address that we are approving.
-# @param tokenId NFT which we are approving.
+
 event Approval:
     owner: indexed(address)
     approved: indexed(address)
     tokenId: indexed(uint256)
 
-# @dev This emits when an operator is enabled or disabled for an owner. The operator can manage
-#      all NFTs of the owner.
-# @param owner Owner of NFT.
-# @param operator Address to which we are setting operator rights.
-# @param approved Status of operator rights(true if operator rights are given and false if
-# revoked).
+
 event ApprovalForAll:
     owner: indexed(address)
     operator: indexed(address)
     approved: bool
 
+TOTAL_SUPPLY: constant(uint256) = 1
 owner: public(address)
-isMinter: public(HashMap[address, bool])
-
-totalSupply: public(uint256)
-
-# @dev TokenID => owner
 idToOwner: public(HashMap[uint256, address])
-
-# @dev Mapping from owner address to count of their tokens.
 balanceOf: public(HashMap[address, uint256])
-
-# @dev Mapping from owner address to mapping of operator addresses.
 isApprovedForAll: public(HashMap[address, HashMap[address, bool]])
-
-# @dev Mapping from NFT ID to approved address.
 idToApprovals: public(HashMap[uint256, address])
-
 
 # ERC20 Token Metadata
 NAME: constant(String[20]) = "Jules Avatar"
 SYMBOL: constant(String[5]) = "JULES"
 baseURI: public(String[100])
 
+
 @external
 def __init__():
-    self.baseURI = "ipfs://QmfBhQ7jk64f852pwYsj5RKZp68ntX1LqGod98MZQxbwrv"
+    # The owner (me) gets the 1 and only NFT
+    self.owner = msg.sender
+    self.baseURI = "ipfs://QmbYVQXcibEoRrdGrF1zh9i1mkXVB3vtPzLA9BFYicKuGc"
+    self.idToOwner[0] = msg.sender
+    self.balanceOf[msg.sender] = 1
+
 
 @pure
 @external
 def name() -> String[40]:
     return NAME
 
+
 @pure
 @external
 def symbol() -> String[5]:
     return SYMBOL
+    
+@pure
+@external
+def totalSupply() -> uint256:
+    return TOTAL_SUPPLY
+
 
 @view
 @external
-def tokenURI(tokenId: uint256) -> String[179]:
-    return concat(self.baseURI, "/" , uint2str(tokenId))
+def tokenURI(tokenId: uint256) -> String[184]:
+    return concat(self.baseURI, "/", uint2str(tokenId), ".json")
+
 
 @external
 def setBaseURI(_baseURI: String[100]):
     assert msg.sender == self.owner
     self.baseURI = _baseURI
 
-############ ERC-165 #############
 
 @pure
 @external
@@ -136,8 +119,6 @@ def supportsInterface(interface_id: bytes4) -> bool:
     """
     return interface_id in SUPPORTED_INTERFACES
 
-
-##### ERC-721 VIEW FUNCTIONS #####
 
 @view
 @external
@@ -166,30 +147,21 @@ def getApproved(tokenId: uint256) -> address:
     return self.idToApprovals[tokenId]
 
 
-### TRANSFER FUNCTION HELPERS ###
-
-@view
-@internal
-def _isApprovedOrOwner(spender: address, tokenId: uint256) -> bool:
+@external
+def transferFrom(owner: address, receiver: address, tokenId: uint256):
     """
-    @dev Returns whether the given spender can transfer a given token ID
-    @param spender address of the spender to query
-    @param tokenId uint256 ID of the token to be transferred
-    @return bool whether the msg.sender is approved for the given token ID,
-        is an operator of the owner, or is the owner of the token
+    @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
+         address for this NFT.
+         Throws if `owner` is not the current owner.
+         Throws if `receiver` is the zero address.
+         Throws if `tokenId` is not a valid NFT.
+    @notice The caller is responsible to confirm that `receiver` is capable of receiving NFTs or else
+            they maybe be permanently lost.
+    @param owner The current owner of the NFT.
+    @param receiver The new owner.
+    @param tokenId The NFT to transfer.
     """
-    owner: address = self.idToOwner[tokenId]
-
-    if owner == spender:
-        return True
-
-    if spender == self.idToApprovals[tokenId]:
-        return True
-
-    if (self.isApprovedForAll[owner])[spender]:
-        return True
-
-    return False
+    self._transferFrom(owner, receiver, tokenId, msg.sender)
 
 
 @internal
@@ -224,21 +196,28 @@ def _transferFrom(owner: address, receiver: address, tokenId: uint256, sender: a
     log Transfer(owner, receiver, tokenId)
 
 
-@external
-def transferFrom(owner: address, receiver: address, tokenId: uint256):
+@view
+@internal
+def _isApprovedOrOwner(spender: address, tokenId: uint256) -> bool:
     """
-    @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
-         address for this NFT.
-         Throws if `owner` is not the current owner.
-         Throws if `receiver` is the zero address.
-         Throws if `tokenId` is not a valid NFT.
-    @notice The caller is responsible to confirm that `receiver` is capable of receiving NFTs or else
-            they maybe be permanently lost.
-    @param owner The current owner of the NFT.
-    @param receiver The new owner.
-    @param tokenId The NFT to transfer.
+    @dev Returns whether the given spender can transfer a given token ID
+    @param spender address of the spender to query
+    @param tokenId uint256 ID of the token to be transferred
+    @return bool whether the msg.sender is approved for the given token ID,
+        is an operator of the owner, or is the owner of the token
     """
-    self._transferFrom(owner, receiver, tokenId, msg.sender)
+    owner: address = self.idToOwner[tokenId]
+
+    if owner == spender:
+        return True
+
+    if spender == self.idToApprovals[tokenId]:
+        return True
+
+    if (self.isApprovedForAll[owner])[spender]:
+        return True
+
+    return False
 
 
 @external
